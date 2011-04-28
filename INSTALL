@@ -121,6 +121,14 @@ For FAT16, with 64-bit LBA, do:
 For FAT32, with 64-bit LBA, do:
         # dd if=bd32_64.bin of=/dev/sda20 bs=1 skip=90 seek=90 count=416
 
+This is exactly what the install targets of the makefile do. So, on a
+UNIX-like OS you can do:
+	# make DEVICE=/dev/sda20 install-bd12
+	or
+	# make DEVICE=/dev/sda20 install-bd16
+	or
+	# make DEVICE=/dev/sda20 install-bd32
+
 
 5. Copy the files you need
 
