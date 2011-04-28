@@ -1,0 +1,142 @@
+                                BootDuet
+    Boot sector program for Intel's Developer's UEFI Emulation (DUET)
+
+
+                       INSTALLATION INSTRUCTIONS
+
+
+1. Limitations of BootDuet
+
+We can think of the following present limitations for BootDuet.
+
+- BootDuet isn't able to find its own partition on the disk. That would
+  require scanning both MBR and GPT partitions. This couldn't be done on the
+  same boot program that scans the FAT file system.
+  Traditionally the boot program on the Master Boot Record passes in the
+  register SI a pointer to the MBR partition entry which is being booted and
+  that's how MS-DOS/Windows/etc boot programs know their own partition.
+  However, this BootDuet will probably find more use in GPT partitioned disks
+  and therefore we couldn't rely on this.
+  We therefore rely on another mechanism of MS-DOS/FAT partitions: the hidden
+  sectors field in the BPB. This is the number of sectors before the boot
+  sector of the partition, and is exactly the start LBA of the partition.
+
+- BootDuet can't handle a root directory with more than 32 KiB whether in
+  FAT12, FAT16 or FAT32. It won't do anything useful or even reasonable in
+  that case.
+
+- BootDuet can't handle FAT12 partitions on 64-bit LBA. That's because the
+  code for FAT12 partitions is more complex and so is the code for 64-bit LBA.
+  I couldn't squeeze it into 448 bytes.
+
+- The 64-bit LBA version of BootDuet does no validation of the boot sector and
+  will fail silently on some error conditions which the 32-bit LBA version
+  would detect. That's also because the 64-bit LBA code is larger.
+
+
+2. Prepare a boot partition
+
+The boot partition must only be large enough to contain EFILDR and EFIVAR.BIN,
+together they are less than a megabyte.
+
+A very small partition should use 12-bit FAT file system, a bigger one should
+use 16-bit FAT and only a partition larger than 512 MiB should use 32-bit FAT
+partition.
+While some tools allow the use of FAT16 or FAT32 on small partitions, other
+tools actually distinguish between FAT12 and FAT32 with base on the number of
+sectors.
+
+BootDuet requires the Hidden Sectors field of the Boot Parameter Block (BPB)
+structure to be filled in, as mentioned in the previous section, and this is
+typically not filled in by default by format programs.
+If your partition starts at an LBA of, say, 390074368, then this is exactly
+what you must use for the Hidden Sectors field.
+
+If you're using Linux and dosfstools for formating this partition, and your
+partition is /dev/sda20, then you can use a command such as:
+
+        # mkfs.msdos -h 390074368 /dev/sda20
+
+If your partition is already formated, then you must fill in this value by
+hand. You can do that with any of many different tools. For me, on Linux, it
+would be practical to use the following command:
+
+        # echo 00: 00 10 40 17 | xxd -r | dd of=/dev/sda20 bs=1 seek=28
+
+Where xxd is a tool for hexdumps that comes with vim and 00 10 40 17 is a
+little endian dump for the hex number 17401000 which is 390074368.
+
+If you absolutely must use 64-bit LBA (remember, it does no validation of the
+boot sector), then you would have to fill in the high 32-bit part of your
+start LBA for the partition, because the Hidden Sectors field only is 32 bit.
+In that case, assuming your partition is already formated, and it starts at
+LBA 39007436800, then, you would have to convert this number to hex, which is
+915064000, byte reverse and pad it to 8 bytes as 00 40 06 15 09 00 00 00, and
+then something like:
+
+        # echo 00: 00 40 06 15 | xxd -r | dd of=/dev/sda20 bs=1 seek=28
+        # echo 00: 09 00 00 00 | xxd -r | dd of=/dev/sda20 bs=1 seek=506
+
+
+3. Compile BootDuet
+
+On Linux, to compile the 32-bit LBA binaries, just use make. The makefile is a
+GNU makefile and we assume that some version of gcc and binutils is installed.
+
+        # make
+
+If additionally you want to build the 64-bit LBA binaries, then use:
+
+        # make lba64
+
+
+4. Install BootDuet on the boot sector
+
+When installing BootDuet on the boot sector of a FAT formated partition, care
+must be taken not to overwrite the Boot Parameter Block (BPB) and Extended BPB
+(EBPB). Also, the EBPB is slightly larger for FAT32 partitions, so be careful
+about which command you pick to copy&paste.
+
+One way to install BootDuet on Linux is using the dd tool.
+
+For FAT12, do:
+        # dd if=bd12.bin of=/dev/sda20 bs=1 skip=62 seek=62 count=448
+
+For FAT16, do:
+        # dd if=bd16.bin of=/dev/sda20 bs=1 skip=62 seek=62 count=448
+
+For FAT32, do:
+        # dd if=bd32.bin of=/dev/sda20 bs=1 skip=90 seek=90 count=420
+
+For 64-bit LBA versions, you must take four bytes from that count, as those
+will be the high 32-bits of the start LBA of your boot partition (as mentioned
+in the previous section).
+
+For FAT12, with 64-bit LBA, do:
+        # dd if=bd12_64.bin of=/dev/sda20 bs=1 skip=62 seek=62 count=444
+
+For FAT16, with 64-bit LBA, do:
+        # dd if=bd16_64.bin of=/dev/sda20 bs=1 skip=62 seek=62 count=444
+
+For FAT32, with 64-bit LBA, do:
+        # dd if=bd32_64.bin of=/dev/sda20 bs=1 skip=90 seek=90 count=416
+
+
+5. Copy the files you need
+
+Finally (or before if you prefer) you can copy the files you need to the boot
+partition, this will be at least the boot loader program.
+On Linux, and assuming you mounted your partition at /mnt, use:
+
+For FAT12:
+        # cp ./EfiLdr /mnt/EFILDR
+
+For FAT16:
+        # cp ./EfiLdr16 /mnt/EFILDR16
+
+For FAT32:
+        # cp ./EfiLdr20 /mnt/EFILDR20
+
+
+                                                Miguel Ramos, 2011
+                                                mail@miguel.ramos.name

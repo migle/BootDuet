@@ -1,0 +1,126 @@
+                                BootDuet
+    Boot sector program for Intel's Developer's UEFI Emulation (DUET)
+
+
+                                 README
+
+
+1. Introduction
+
+Intel has made available a toolkit for helping the development of device
+drivers and low level software or firmware which interface with each other
+according to the Unified Extensible Firmware Interface specification (UEFI).
+This toolkit is known as the EFI Development Kit (EDK).
+
+Among the components of the EDK is the DUET package, the Developer's UEFI
+Emulation. This component emulates a UEFI compliant firmware on a PC with an
+older BIOS firmware, thus simplifying the development of UEFI compliant
+software before UEFI firmware becomes generally available.
+
+Some (most?) parts of this toolkit are open source, and some have been
+extended by people outside Intel, and most of this development has been
+gravitating around the community web site tianocore, on SourceForge.
+
+
+Although the tianocore community has been very active adding new components to
+the EDK for a few years now, there appears to have been no focus on making it
+easier for a wider audience to start experimenting with UEFI and DUET.
+
+As of 2011, the EDK still requires the Windows DDK to compile on Windows and
+mingw on Linux, and DUET must be booted from a floppy disk or USB disk, it
+cannot be booted from a modern hard drive.
+
+While this is probably acceptable for programmers who earn their day
+developing device drivers and such low level software, these aren't the kinds
+of tools that application programmers and enthusiasts would want to have
+to use just for a sneak preview.
+
+
+The scope of this project is therefore simply to make it easier for a wider
+audience to compile and run DUET.
+The first task of this project is to create a new boot program which is able
+to load and execute DUET from a hard disk partition.
+
+For now, we build on the work of Keshav P R from India who has made available
+a pre-compiled version of DUET on github
+(https://github.com/skodabenz/EFI_DUET) and we concentrate on this boot
+program which is able to load and execute EFILDR.
+
+
+2. The original boot loader for DUET
+
+The original DUET code from Intel boots in several stages. The first stage is
+the sector that lies on the boot sector of the drive. There are two versions
+of this stage:
+        - Mbr.asm, for MBR-based disks,
+        - Gpt.asm, for GPT-based disks.
+
+The function of this stage is simply to load the first sector of the partition
+containing the remaining software and execute it.
+There appears to be nothing wrong with Gpt.asm, it will work on modern hard
+disks. Mbr.asm, however, uses a BIOS int 13h interface which is limited to
+the first 1023 cylinders of the disk.
+
+The next stage is the sector that lies on the first sector of the boot
+partition. There are three versions of this stage (which we will call
+collectively bootsect.asm):
+        - bootsect.asm, for FAT12 boot partitions,
+        - bs16.asm, for FAT16 boot partitions,
+        - bs32.asm, for FAT32 boot partitions.
+
+The function of this stage is to scan the boot partition looking for two
+files, one is the DUET loader program, EFILDR (on FAT12, EFILDR16 on FAT16 and
+EFILDR20 on FAT32), and the other is a file used for storing settings for the
+UEFI emulation, EFIVAR.BIN. This stage loads the first cluster of EFILDR and
+then executes it.
+All versions of this stage suffer from the 1023 cylinder limitation. bs32.asm
+suffers additionally from some design flaws, as it attempts to use elements of
+the FAT BPB which are not valid for a FAT32 file system.
+
+The next stage, or two stages, is the first 4096 bytes of EFILDR. Because the
+cluster size of the FAT partition may be as small as 512 bytes, only the first
+512 bytes of EFILDR are assumed to be loaded. There are six versions of this
+stage (which we will call collectively start.asm):
+        - start.asm, for FAT12 on IA32,
+        - start16.asm, for FAT16 on IA32,
+        - start32.asm, for FAT32 on IA32,
+        - start64.asm, for FAT12 on X64,
+        - st16_64.asm, for FAT16 on X64,
+        - st32_64.asm, for FAT32 on X64.
+
+The first 512 bytes of start.asm first loads the entire EFILDR and EFIVAR.BIN
+files and only then it passes control to the remainder of start.asm.
+The remainder has the function of switching to protected mode and then, in the
+case of X64, to long mode.
+
+The final stage of booting establishes interrupt handlers for processor
+exceptions and also has two versions:
+        - efi32.asm, for IA32,
+        - efi64.asm, for X64.
+
+Our first problem is to address the limitations of bootsect.asm and start.asm
+(or the first 512 bytes of start.asm) which can't be used on a hard disk.
+
+
+3. Our own boot program, BootDuet.S
+
+We replace both bootsect.asm and start.asm with our own boot program,
+BootDuet.S, which is designed to be installed on the boot sector of a FAT
+formatted partition.
+
+We use only Logical Block Addressing (LBA) and therefore this program does not
+have the 1023 cylinder limitation.
+It is possible to compile BootDuet.S with 64-bit LBA support, which allows it
+to be used with disks larger than 2TB.
+
+We managed to squeeze the FAT style chain loading of the entire EFILDR and
+EFIVAR.BIN files into this 448 byte (420 for FAT32) program.
+Because of that we are able to skip the first 512 bytes of start.asm, and jump
+directly into the part which switches to protected mode.
+
+
+See INSTALL for instruction regarding installation of BootDuet.
+
+
+                                                Miguel Ramos, 2011
+                                                mail@miguel.ramos.name
