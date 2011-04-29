@@ -146,4 +146,41 @@ For FAT32:
         # cp ./EfiLdr20 /mnt/EFILDR20
 
 
+6. Troubleshooting
+
+If you have installed BootDuet on the boot sector of a FAT partition and have
+some MBR program loading it and you still can't get DUET to load, then some of
+the verifications that BootDuet does may help you solve the problem.
+
+6.1 The system hangs and the work Bad is written on the screen
+
+This may happen if:
+- You haven't set the Hidden Sectors field of the BPB as explained in section
+  2 of this guide. This is necessary for BootDuet to find its own partition.
+- You used some too old or too new format program for your FAT partition.
+  BootDuet expects the EBPB signature byte to be 0x29 (see wikipedia).
+  Maybe try another format tool.
+- You installed a FAT12 or FAT16 version of BootDuet into a FAT32 partition or
+  vice versa.
+
+6.2 The system hangs and "Missing EFILDR/EFILDR16/EFILDR20" is on the screen
+
+You must copy the missing file to your boot FAT partition. Note that the FAT12
+version expects the file to be called EFILDR, the FAT16 version expects
+EFILDR16 and the FAT32 version expects EFILDR20. This is for similarity with
+Intel's original boot sector code of DUET.
+
+You can find a compiled version of that file on
+https://github.com/skodabenz/EFI_DUET. Note that you can just rename EfiLdr20
+to EFILDR, EFILDR16 or EFILDR20. The same program recognizes the three types
+of FAT file systems.
+
+6.3 The system hangs and only "EFILDR/EFILDR16/EFILDR20" or "EFIVAR.BIN" is
+    written on the screen
+
+Some kind of error occurred while loading that file. Maybe your file system is
+corrupted or maybe it is a bug in BootDuet. Try formating, installing and
+copying everything all over again, or try something else.
+
+
                                         Miguel Lopes Santos Ramos, 2011
