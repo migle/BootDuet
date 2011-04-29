@@ -34,6 +34,10 @@ While this is probably acceptable for programmers who earn their day
 developing device drivers and such low level software, these aren't the kinds
 of tools that application programmers and enthusiasts would want to have
 to use just for a sneak preview.
+Even more so, as it seems incomprehensible to require the Windows DDK for
+building stand-alone binaries which don't depend on Windows NT or the mingw
+version of GCC which is intended for compiling Win32 programs, which is also
+clearly not the case.
 
 
 The scope of this project is therefore simply to make it easier for a wider
