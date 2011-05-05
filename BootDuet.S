@@ -870,8 +870,6 @@ fread.6:
  */
 read:
 		pushw	%si
-		pushw	%bp
-		movw	%sp,%bp
 
 	/*
 	 * Fill in Disk Address Packet (DAP) structure. This is filled on the
@@ -889,7 +887,7 @@ read:
 	 */
 	 	movb	$0x42,%ah
 		movb	bDrive,%dl
-		leaw	-16(%bp),%si		# SI = BP - 16 (&DAP)
+		movw	%sp,%si			# SI = SP (base of DAP)
 		int	$0x13
 
 	/*
@@ -897,7 +895,6 @@ read:
 	 * already been written on the screen).
 	 */
 read.h:		jc	read.h			# Halt if carry
-		leave
 		popw	%si
 		ret
 
