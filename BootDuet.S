@@ -207,9 +207,11 @@ main:
 
 		movw	%sp,%bp			# yes, we use a frame pointer
 
+#if !defined(WITH_HARDCODED_DRIVE)
 		movb	%dl,main_bDrive(%bp)	# store drive number, which the
 						# MBR should have passed us on
 						# DL, to the EBPB.
+#endif
 
 #if defined(WITH_VALIDATION) && !defined(DEBUG)
 

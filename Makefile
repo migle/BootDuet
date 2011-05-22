@@ -9,11 +9,16 @@ all : bd16.bin bd32.bin bd12.bin
 
 lba64 : bd16_64.bin bd32_64.bin # bd12_64.bin
 
+hardcoded-drive : bd16hd.bin bd32hd.bin bd12hd.bin
+
 
 clean :
 	@rm -f bd16.bin bd32.bin bd12.bin \
 		bd16.lst bd32.lst bd12.lst \
 		bd16.map bd32.map bd12.map \
+		bd16hd.bin bd32hd.bin bd12hd.bin \
+		bd16hd.lst bd32hd.lst bd12hd.lst \
+		bd16hd.map bd32hd.map bd12hd.map \
 		bd16_64.bin bd32_64.bin bd12_64.bin \
 		bd16_64.lst bd32_64.lst bd12_64.lst \
 		bd16_64.map bd32_64.map bd12_64.map
@@ -37,6 +42,15 @@ bd16_64.bin : BootDuet.S
 bd32_64.bin : BootDuet.S
 	gcc -DFAT=32 -DWITH_LBA_64BIT $(CFLAGS) -o $@ $< -Wa,-a=$(@:.bin=.lst) -Wl,-Map=$(@:.bin=.map)
 
+bd12hd.bin : BootDuet.S
+	gcc -DFAT=12 -DWITH_HARDCODED_DRIVE $(CFLAGS) -o $@ $< -Wa,-a=$(@:.bin=.lst) -Wl,-Map=$(@:.bin=.map)
+
+bd16hd.bin : BootDuet.S
+	gcc -DFAT=16 -DWITH_HARDCODED_DRIVE $(CFLAGS) -o $@ $< -Wa,-a=$(@:.bin=.lst) -Wl,-Map=$(@:.bin=.map)
+
+bd32hd.bin : BootDuet.S
+	gcc -DFAT=32 -DWITH_HARDCODED_DRIVE $(CFLAGS) -o $@ $< -Wa,-a=$(@:.bin=.lst) -Wl,-Map=$(@:.bin=.map)
+
 
 install-bd12 : bd12.bin
 	dd if=$< of=$(DEVICE) bs=1 skip=62 seek=62 count=448
@@ -55,3 +69,12 @@ install-bd16_64 : bd16_64.bin
 
 install-bd32_64 : bd32_64.bin
 	dd if=$< of=$(DEVICE) bs=1 skip=90 seek=90 count=416
+
+install-bd12hd : bd12hd.bin
+	dd if=$< of=$(DEVICE) bs=1 skip=62 seek=62 count=448
+
+install-bd16hd : bd16hd.bin
+	dd if=$< of=$(DEVICE) bs=1 skip=62 seek=62 count=448
+
+install-bd32hd : bd32hd.bin
+	dd if=$< of=$(DEVICE) bs=1 skip=90 seek=90 count=420

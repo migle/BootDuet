@@ -21,6 +21,17 @@ We can think of the following present limitations for BootDuet.
   sectors field in the BPB. This is the number of sectors before the boot
   sector of the partition, and is exactly the start LBA of the partition.
 
+- BootDuet doesn't want to guess the BIOS drive number where it should find
+  its own partition. Normally, MBR boot programs always pass the boot BIOS
+  drive number in the DL register to the partition boot program.
+  And that's how BootDuet normally knows the drive number of its partition.
+  However, one important MBR boot program does not do that, which is the
+  Gpt.com program in EFI DUET.
+  For that case, there is the option of compiling BootDuet with the
+  WITH_HARDCODED_DRIVE option (see Makefile), and in that case, BootDuet
+  will use the BIOS drive number which is hard coded on the Boot Parameter
+  Block of its own partition.
+
 - BootDuet can't handle a root directory with more than 32 KiB whether in
   FAT12, FAT16 or FAT32. It won't do anything useful or even reasonable in
   that case.
@@ -66,6 +77,23 @@ would be practical to use the following command:
 Where xxd is a tool for hexdumps that comes with vim and 00 10 40 17 is a
 little endian dump for the hex number 17401000 which is 390074368.
 
+The versions of BootDuet compiled with WITH_HARDCODED_DRIVE, the "hd" versions,
+also require that the BIOS drive number field of the Boot Parameter Block of
+its own partition to be set to the correct drive number.
+Many format tools, specifically dosfstools, don't set that.
+Note that you only need to do this if you plan to use EFI DUET's Gpt.com for
+the MBR boot program.
+That field may be set with a command such as:
+
+For FAT12 or FAT16:
+	# echo 00: 80 | xxd -r | dd of=/dev/sda20 bs=1 seek=36
+For FAT32:
+	# echo 00: 80 | xxd -r | dd of=/dev/sda20 bs=1 seek=64
+
+Where 80 would be the BIOS drive number in hex. The convention for BIOS drive
+numbers is 00 for the first floppy drive (A: in MS-DOS), 01 for the second
+(B:), 80 for the first hard drive (C:), 81 for the second hard drive (D:).
+
 If you absolutely must use 64-bit LBA (remember, it does no validation of the
 boot sector), then you would have to fill in the high 32-bit part of your
 start LBA for the partition, because the Hidden Sectors field only is 32 bit.
@@ -88,6 +116,12 @@ GNU makefile and we assume that some version of gcc and binutils is installed.
 If additionally you want to build the 64-bit LBA binaries, then use:
 
         # make lba64
+
+If you want to build BootDuet versions that use the hard-coded BIOS drive
+number (such as if your planning to use EFI DUET's Gpt.com for the MBR), then
+use:
+
+	# make hardcoded-drive
 
 
 4. Install BootDuet on the boot sector
