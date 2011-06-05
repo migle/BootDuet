@@ -897,6 +897,7 @@ read:
 	 * already been written on the screen).
 	 */
 read.h:		jc	read.h			# Halt if carry
+		addw	$16,%sp
 		popw	%si
 		ret
 
