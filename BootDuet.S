@@ -51,9 +51,9 @@
 
 .equ	BaseAddress, 0x7c00	# Offset address for our own code and data
 #if FAT == 32 || FAT == 16
-.equ	FatOffset, 0x6000	# Offset address for the FAT buffer
-#else
 .equ	FatOffset, 0x7e00	# Offset address for the FAT buffer
+#else
+.equ	FatOffset, 0x6000	# Offset address for the FAT buffer
 #endif
 .equ	RootOffset, 0x8000	# Offset address for the root dir buffer
 
