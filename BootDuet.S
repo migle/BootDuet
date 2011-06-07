@@ -762,14 +762,14 @@ fread.4:
 
 		pushw	%dx			# save cluster pointer index
 #elif FAT == 16
-		movw	main_wBps(%bp),%bx	# BX = bytes per sector
+		movw	fread_wBps(%bp),%bx	# BX = bytes per sector
 		shrw	$1,%bx			# BX = ptrs per sector
 		xorw	%dx,%dx
 		divw	%bx			# AX = FAT sector, DX = ptr
 
 		pushw	%dx			# save cluster pointer index
 #elif FAT == 12
-		movw	main_wBps(%bp),%bx	# BX = bytes per sector
+		movw	fread_wBps(%bp),%bx	# BX = bytes per sector
 		shlw	$1,%bx			# BX = ptrs per trio
 		xorw	%dx,%dx
 		divw	%bx			# AX = FAT trio, DX = ptr
