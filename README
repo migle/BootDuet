@@ -46,9 +46,9 @@ The first task of this project is to create a new boot program which is able
 to load and execute DUET from a hard disk partition.
 
 For now, we build on the work of Keshav P R from India who has made available
-a pre-compiled version of DUET on github
-(https://github.com/skodabenz/EFI_DUET) and we concentrate on this boot
-program which is able to load and execute EFILDR.
+a pre-compiled version of DUET on gitorius
+(https://gitorious.org/tianocore_uefi_duet_builds)
+and we concentrate on this boot program which is able to load and execute EFILDR.
 
 
 2. The original boot loader for DUET
